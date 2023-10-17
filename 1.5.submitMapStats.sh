@@ -37,4 +37,5 @@ base=`sed -n "$SGE_TASK_ID"p $sample_list | awk '{print $1}'`
 samtools flagstat ${base}.final.bam > ${base}.flagstat.txt
 bedtools genomecov -ibam ${base}.final.bam > ${base}.cov.txt
 mosdepth -n --fast-mode -t 4 -Q30 ${base} ${base}.final.bam
+multiqc .
 
