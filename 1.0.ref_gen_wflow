@@ -6,7 +6,7 @@ module load roslin/bwa/2.1.0
 
 
 #download genome from ncbi
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/902/686/455/GCA_902686455.2_mSciVul1.2_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/902/686/455/GCA_902686455.2_mSciVul1.2/GCA_902686455.2_mSciVul1.2_genomic.fna.gz
 gzip -d GCA_902686455.2_mSciVul1.2_genomic.fna.gz
 
 #change chromosome from genbank to 1..19. Note autosome numbers go LR738611.1 to LR738620.1 for chr1 - chr10
