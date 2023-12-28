@@ -7,10 +7,10 @@
 #$ -l h_vmem=8G
 #$ -t 1-108
 #$ -pe sharedmem 4
-#$ -o o_bwa
-#$ -e e_bwa
+#$ -o o_stats
+#$ -e e_stats
 
-# Jobscript to align reads to reference, remove dups, 
+# Jobscript to calculate mapping stats on bam files
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Load Dependencies and setup env variables #
