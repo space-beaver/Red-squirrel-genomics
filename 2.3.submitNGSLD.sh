@@ -8,12 +8,12 @@
 #$ -o o_ngsld
 #$ -e e_ngsld
 #$ -t 1:19
-#$ -P roslin_prendergast_cores
+#$ -P roslin_faang
 
 #define dirs 
 ngsld=/exports/cmvm/eddie/eb/groups/ogden_grp/software/ngsTools/ngsLD
-target_dir=/exports/eddie/scratch/mmarr3/red_squirrel/data
-ref_gen=/exports/eddie/scratch/mmarr3/red_squirrel/ref_genome/svul_refgen_mod.fa
+target_dir=/exports/eddie/scratch/mmarr3/snps_gls
+ref_gen=/exports/eddie/scratch/mmarr3/ref_genome/svul_refgen.fa
 
 #modules
 . /etc/profile.d/modules.sh
@@ -51,5 +51,23 @@ perl $ngsld/scripts/prune_graph.pl \
   --max_kb_dist 2000 \
   --min_weight 0.5 \
   --out chr${SGE_TASK_ID}_unlinked.id
+  
+#in R 
+#basedir="/exports/eddie/scratch/mmarr3/snps_gls/"
 
+#for single file 
+#pruned_position <- as.integer(gsub("1:", "", readLines(paste0(basedir, "chr1_unlinked.id"))))
+#snp_list <- read.table(paste0(basedir, "chr1.mafs.gz"), stringsAsFactors = F, header = T)[,1:4]
+#pruned_snp_list <- snp_list[snp_list$position %in% pruned_position, ]
+#write.table(pruned_snp_list, paste0(basedir, "chr1_LDpruned_snps.list"), col.names = F, row.names = F, quote = F, sep = "\t")
+
+#loop 
+#for(chr in 1:19) {
+#  pruned_position <- as.integer(gsub(paste0(chr, ":"), "", 
+#  readLines(paste0(basedir, paste0("chr", chr, "_unlinked.id")))))
+#  snp_list <- read.table(paste0(basedir, paste0("chr", chr, ".mafs.gz")), stringsAsFactors = F, header = T)[,1:4]
+#  pruned_snp_list <- snp_list[snp_list$position %in% pruned_position, ]
+#  write.table(pruned_snp_list[,c(1,2)], paste0(basedir, paste0("chr", chr, "_LDpruned_snps.list")),
+#             col.names = F, row.names = F, quote = F, sep = "\t")
+#}
 
