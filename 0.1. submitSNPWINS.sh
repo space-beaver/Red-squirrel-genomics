@@ -5,7 +5,6 @@
 #$ -l h_rt=05:00:00
 #$ -l h_vmem=32G
 #$ -pe sharedmem 4
-#$ -P roslin_prendergast_cores
 #$ -e e_snpwin
 #$ -o o_snpwin
 
