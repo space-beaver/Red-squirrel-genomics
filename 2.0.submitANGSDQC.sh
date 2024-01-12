@@ -8,7 +8,6 @@
 #$ -o o_QC
 #$ -e e_QC
 #$ -t 1-19
-#$ -P roslin_prendergast_cores
 
 # Initialise the Modules environment
 . /etc/profile.d/modules.sh
