@@ -6,7 +6,7 @@
 #$ -l h_vmem=32G
 #$ -pe sharedmem 12
 #$ -t 1:19
-#$ -P roslin_prendergast_cores
+
 
 #estimates genotype likelihoods with GATK
 #calulates allele frequencies 
