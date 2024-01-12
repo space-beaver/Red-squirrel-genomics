@@ -8,7 +8,7 @@
 #$ -t 1:19
 #$ -e e_angsdUL
 #$ -o o_angsdUL
-#$ -P roslin_prendergast_cores
+
 
 #estimates genotype likelihoods with GATK
 #calulates allele frequencies 
