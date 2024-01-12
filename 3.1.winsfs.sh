@@ -7,7 +7,7 @@
 #$ -pe sharedmem 8
 #$ -e e_win
 #$ -o o_win
-#$ -P roslin_faang
+
 
 #initialise mod env
 . /etc/profile.d/modules.sh
