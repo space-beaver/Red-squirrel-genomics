@@ -6,7 +6,6 @@
 #$ -l h_rt=72:00:00
 #$ -l h_vmem=32G
 #$ -pe sharedmem 12
-#$ -P roslin_prendergast_cores
 #$ -t 1-20
 #$ -e e_admix
 #$ -o o_admix
