@@ -6,7 +6,8 @@
 #$ -e e_het
 #$ -o o_het
 #$ -t 1-4
-#$ -P roslin_faang
+
+#calculation of individual folded site frequency spectrum and ind het, example for inds from arran 
 
 # Initialise the Modules environment
 . /etc/profile.d/modules.sh
@@ -20,8 +21,6 @@ REALSFS=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/misc
 THIS_SAMPLE=$(echo "${BAMLIST}" | sed -n ${SGE_TASK_ID}p)
 base=$(echo "${THIS_SAMPLE}" | sed -n ${SGE_TASK_ID}p | cut -f 8 -d '/' | cut -f 1 -d '.')
 echo Processing file: ${THIS_SAMPLE} on $HOSTNAME
-
-
 
 #calc ind sfs
 
