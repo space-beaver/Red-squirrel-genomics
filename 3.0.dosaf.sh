@@ -8,7 +8,6 @@
 #$ -o o_saf
 #$ -e e_saf
 #$ -t 1-19
-#$ -P roslin_faang
 
 #define variables
 ANGSD=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/angsd
