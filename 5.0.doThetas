@@ -8,6 +8,9 @@
 #$ -e e_dotheta
 #$ -o o_dotheta
 
+#example to calulcate thetas from poopulation level folded sfs for population Arran
+
+#software path
 angsd=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/misc
 
 #persite thetas 
