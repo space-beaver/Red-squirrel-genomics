@@ -4,7 +4,6 @@
 #$ -cwd
 #$ -l h_rt=36:00:00
 #$ -l h_vmem=16G
-#$ -P roslin_prendergast_cores
 #$ -t 1:42
 #$ -pe sharedmem 4 
 
