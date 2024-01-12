@@ -1,0 +1,279 @@
+<><>feems-workflow<> <>MMarr<> <>12/01/2024<><>
+
+*******************************************************************************
+*#fast estimation of effective migration surface (feems)           
+*#is a python package implementing a statistical method for inferring 
+*#and visualizing gene-flow in spatial population genetic data. Based on EEMS. 
+*#EEMS github https://github.com/dipetkov/eems
+*#FEEMS github https://github.com/NovembreLab/feems
+*******************************************************************************
+
+#modules req: 
+module load igmm/apps/bcftools/1.16 
+module load igmm/apps/tabix/0.2.6
+module load roslin/plink/1.90p
+
+<1. log into eddie
+ssh -XY mmarr3@eddie.ecdf.ed.ac.uk
+qlogin -N feems -l h_rt=10:00:00 -l h_vmem-16G
+
+<2. prepare snp data 
+  i. angsd run to call snps with no missing data and average min 4x coverage 
+
+#!/bin/sh
+# Grid Engine options
+#$ -N angsdUL
+#$ -cwd 
+#$ -l h_rt=72:00:00
+#$ -l h_vmem=32G
+#$ -pe sharedmem 12
+#$ -t 1:19
+#$ -e e_angsdUL
+#$ -o o_angsdUL
+
+#estimates genotype likelihoods with GATK
+#calulates allele frequencies 
+#calls and filters SNPS 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Load Dependencies and setup env variables #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#Initialise the Modules environment
+. /etc/profile.d/modules.sh
+
+#Load java
+module add java
+#angsd=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd
+#bams="/exports/eddie/scratch/mmarr3/snps_gls/bamlistpaths.txt"
+#target_dir=/exports/eddie/scratch/mmarr3/feems
+#ref_gen=/exports/eddie/scratch/mmarr3/ref_genome/svul_refgen.fa
+
+#run and input parameters 
+#$angsd/angsd \
+#  -bam $bams \
+#  -ref $ref_gen \
+#  -P 12 \
+#  -out $target_dir/chr${SGE_TASK_ID}_pruned \
+#  -r ${SGE_TASK_ID} \
+#  -uniqueOnly 1 \
+#  -minInd 108 \
+#  -remove_bads 1 \
+#  -only_proper_pairs 1 \
+#  -trim 0 \
+#  -C 50 \
+#  -baq 1 \
+#  -minMapQ 30 \
+#  -minQ 20 \
+#  -doCounts 1 \
+#  -GL 2 \
+#  -doGlf 2 \
+#  -doMajorMinor 4 \
+#  -doMaf 1 \
+#  -SNP_pval 1e-06 \
+#  -doPost 1 \
+#  -doGeno 2 \
+#  -setMinDepth 376 \
+#  -setMaxDepth 750 \
+#  -dobcf 1
+
+	#ii. concat bcf files 
+bcftools concat chr1_pruned.bcf chr2_pruned.bcf chr3_pruned.bcf chr4_pruned.bcf chr5_pruned.bcf \
+chr6_pruned.bcf chr7_pruned.bcf chr8_pruned.bcf chr9_pruned.bcf chr10_pruned.bcf chr11_pruned.bcf \
+chr12_pruned.bcf chr13_pruned.bcf chr14_pruned.bcf chr15_pruned.bcf chr16_pruned.bcf chr17_pruned.bcf \
+chr18_pruned.bcf chr19_pruned.bcf -Oz -o svul_concat_pruned.vcf.gz
+
+bcftools view -H svul_concat_pruned.vcf.gz | wc -l
+
+
+	#iii. rename samples, extract scottish, sort, index
+	
+bcftools reheader --samples sam_change.txt -o svul_concat_pruned_renamed.vcf.gz  svul_concat_pruned.vcf.gz
+bcftools view -S ^ex_sam.txt -Oz -o svul_concat_pruned_renamed_final_gone.vcf.gz svul_concat_pruned_renamed.vcf.gz
+
+bcftools sort -Oz -o svul_concat_pruned_renamed_final_sorted.vcf.gz svul_concat_pruned_renamed_final.vcf.gz
+tabix -p vcf svul_concat_pruned_renamed_final_sorted.vcf.gz
+
+	#v. prune for ld, convert to plink format
+	
+plink --vcf svul_concat_pruned_renamed_final_sorted.vcf.gz --set-missing-var-ids @:#  --recode vcf --maf 0.05 --geno 0 --allow-extra-chr --out squirrel_feems_filt
+#51632 variants removed due to minor allele threshold(s)
+
+plink --vcf squirrel_feems_filt.vcf --allow-extra-chr --indep-pairwise 50 10 0.1 --out squirrel_feems_filt
+#60458 of 71420 variants removed.
+
+plink --vcf squirrel_feems_filt.vcf --extract squirrel_feems_filt.prune.in --recode vcf --allow-extra-chr --out squirrel_feems_filt_ld
+#10962 variants and 94 people pass filters and QC.
+
+	#iii. generate plink files 
+plink --vcf squirrel_feems_filt_ld.vcf --allow-extra-chr --recode --out squirrel_feems_filt_ld
+plink --file squirrel_feems_filt_ld --allow-extra-chr --make-bed --out squirrel_feems_filt_ld
+
+
+<3. create spatial input files
+
+	i. create .coord file #lat and long coordinates for every sample in corresponding order to sample order in txt file
+	ii. create .outer file #lat and long coordinates of the boundary area of interest using http://www.birdtheme.org/useful/v3tool.html 
+                        #note first and last coordinate must be the same to create polygon 
+	iii. create custom grid in R #feems provides a 100km and 250km world grid. This won't work for smaller regions that needs a denser grid. 
+	
+#The following is for creating a triangular 10km for scotland. Requires a shapefile of area. Check DGGRID C++ manual for original description, 
+#ggridR is adapted for R. See doc for different resolution. 
+          install.packages("dggridR")
+          library(dggridR)
+          install.packages("ggplot2")
+          library (ggplot2)
+          require(sf)
+          
+          setwd("C:/Users/melis/Documents/r_data/svul_feems")
+
+#create discrete global grid
+dggs <- dgconstruct(spacing=5, metric=FALSE, resround='nearest', projection='ISEA', aperture = 4, topology = "TRIANGLE")
+
+#read in uk shapefile 
+scotne_border <- st_read(".", layer="scot_ne")
+st_crs(scotne_border)=4326
+
+#view boundary
+plot(scotne_border)
+
+shape <- read_sf(dsn = ".", layer = "scot_ne")
+
+#create grid
+grid <- dgshptogrid(dggs, "scot_ne.shp", cellsize = 0.01, savegrid=".")
+
+#plot
+p <- ggplot() +
+  geom_sf(data=scotne_border, fill=NA, color="black") +
+  geom_sf(data=grid, fill=alpha("blue", 0.4), color=alpha("white", 0.4))
+p
+
+
+<4. Create env and instal feems 
+
+	i. create conda environment
+	
+mamba create -n feems 
+mamba activate feems 
+mamba install -c bioconda feems -c conda-forge
+#had to do additional installs
+mamba install anaconda::tqdm 
+mamba install conda-forge::cffi
+#may also have to change np.int to int and np.float to float in env/feems/lib/python3.9/site-packages/feems/spatial_grapy.py
+          
+	ii. enable multiple lines to be pasted into python
+echo "set enable-bracketed-paste off" >> ~/.inputrc 
+            
+    iii. Run feems #this can all be done with an executable jupyter notebook 
+    
+         #start
+python
+         
+		#load packages 
+		# base
+import numpy as np
+import pkg_resources
+from sklearn.impute import SimpleImputer
+from pandas_plink import read_plink
+import os 
+
+# viz
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import cartopy.crs as ccrs
+import matplotlib #this isn't in instructions but required for pop out graphics on sge 
+matplotlib.use('tkagg') #as above 
+
+# feems
+from feems.utils import prepare_graph_inputs
+from feems import SpatialGraph, Viz
+
+# change matplotlib fonts
+plt.rcParams["font.family"] = "Arial"
+plt.rcParams["font.sans-serif"] = "Arial"
+
+#data_path = pkg_resources.resource_filename("feems", "data/")
+data_path = ("feems/", "data/") 
+  
+	 
+	 
+#test that graphics work #should open a graphics window and save file as pgn
+x = np.linspace(0, 10, 100)
+fig = plt.figure()
+plt.plot(x, np.sin(x), '-')
+plt.plot(x, np.cos(x), '--');
+         
+plt.show()
+fig.savefig('my_figure.png')
+         
+#run analyses 
+         
+#read the genotype data and mean impute missing data
+(bim, fam, G) = read_plink("squirrel_feems_filt_ld")
+imp = SimpleImputer(missing_values=np.nan, strategy="mean")
+genotypes = imp.fit_transform((np.array(G)).T)
+
+print("n_samples={}, n_snps={}".format(genotypes.shape[0], genotypes.shape[1]))
+         
+#read in data 
+coord = np.loadtxt("squirrel.coord")  # sample coordinates
+outer = np.loadtxt("squirrel.outer")  # outer coordinates
+grid_path = ("dggrid.shp")  # path to discrete global grid
+         
+#graph input files
+outer, edges, grid, _ = prepare_graph_inputs(coord=coord, 
+                                             ggrid=grid_path,
+                                             translated=False, # doc recommend TRUE but didnt work for me
+                                             buffer=0,
+                                             outer=outer)
+
+#view data
+outer[:5, ]
+edges[:5, ]
+grid[:5, ]
+         
+sp_graph = SpatialGraph(genotypes, coord, grid, edges, scale_snps=False)
+
+projection = ccrs.EquidistantConic(central_longitude=-4.203532, central_latitude=56.587083) #change lon and lat to centre coords of your dataset 
+
+#plot no weights. 
+fig = plt.figure(dpi=300)
+ax = fig.add_subplot(1, 1, 1, projection=projection)  
+v = Viz(ax, sp_graph, projection=projection, edge_width=.5, 
+        edge_alpha=1, edge_zorder=100, sample_pt_size=10, 
+        obs_node_size=7.5, sample_pt_color="black", 
+        cbar_font_size=10)
+v.draw_map()
+v.draw_samples()
+v.draw_edges(use_weights=False)
+v.draw_obs_nodes(use_ids=False)
+fig.savefig('feems_noweights.png')
+
+#plot weighted
+sp_graph.fit(lamb = 20.0)
+
+fig = plt.figure(dpi=300)
+ax = fig.add_subplot(1, 1, 1, projection=projection)  
+v = Viz(ax, sp_graph, projection=projection, edge_width=.5, 
+        edge_alpha=1, edge_zorder=100, sample_pt_size=20, 
+        obs_node_size=7.5, sample_pt_color="black", 
+        cbar_font_size=10)
+v.draw_map()
+v.draw_edges(use_weights=True)
+v.draw_obs_nodes(use_ids=False) 
+v.draw_edge_colorbar()
+fig.savefig('feems_1.png')
+
+sp_graph.fit(lamb = 2)
+
+fig = plt.figure(dpi=300)
+ax = fig.add_subplot(1, 1, 1, projection=projection)  
+v = Viz(ax, sp_graph, projection=projection, edge_width=.5, 
+        edge_alpha=1, edge_zorder=100, sample_pt_size=20, 
+        obs_node_size=7.5, sample_pt_color="black", 
+        cbar_font_size=10)
+v.draw_map()
+v.draw_edges(use_weights=True)
+v.draw_obs_nodes(use_ids=False) 
+v.draw_edge_colorbar()
+fig.savefig('feems_lamda2.png')
