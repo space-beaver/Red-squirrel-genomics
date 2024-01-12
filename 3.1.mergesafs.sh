@@ -8,6 +8,7 @@
 #$ -o o_m
 #$ -e e_m
 
+#example to merged saf.idx files from population level safs
 
 /exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/misc/realSFS \
 cat  chr1_sfs.saf.idx  chr2_sfs.saf.idx chr3_sfs.saf.idx chr4_sfs.saf.idx \
