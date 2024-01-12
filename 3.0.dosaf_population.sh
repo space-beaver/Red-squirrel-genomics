@@ -9,6 +9,8 @@
 #$ -e e_saf
 #$ -t 1-19
 
+#site allele frequency calculation by chromsome. Example for population Arran
+
 #define variables
 ANGSD=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/angsd
 ANC=/exports/eddie/scratch/mmarr3/ref_genome/svul_refgen.fa
