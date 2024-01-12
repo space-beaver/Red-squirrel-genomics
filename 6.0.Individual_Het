@@ -1,0 +1,47 @@
+#$ -N het
+#$ -cwd
+#$ -l h_rt=48:00:00
+#$ -l h_vmem=64G
+#$ -pe sharedmem 8
+#$ -e e_het
+#$ -o o_het
+#$ -t 1-4
+#$ -P roslin_faang
+
+# Initialise the Modules environment
+. /etc/profile.d/modules.sh
+
+ANGSD=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/angsd
+TARGET_DIR=/exports/eddie/scratch/mmarr3/sfs/arr
+REF=/exports/eddie/scratch/mmarr3/ref_genome/svul_refgen.fa
+BAMLIST="/exports/eddie/scratch/mmarr3/sfs/arr/arr_list.txt"
+REALSFS=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/misc 
+
+THIS_SAMPLE=$(echo "${BAMLIST}" | sed -n ${SGE_TASK_ID}p)
+base=$(echo "${THIS_SAMPLE}" | sed -n ${SGE_TASK_ID}p | cut -f 8 -d '/' | cut -f 1 -d '.')
+echo Processing file: ${THIS_SAMPLE} on $HOSTNAME
+
+
+
+#calc ind sfs
+
+ $ANGSD 
+        -i $THIS_SAMPLE \
+        -P 8 \
+        -uniqueOnly 1 \
+        -remove_bads 1 \
+        -only_proper_pairs 1 \
+        -baq 1 \
+        -doSaf 1 \
+        -minMapQ 30 \
+        -minQ 30 \
+        -doCounts 1 \
+        -setMinDepth 2 \
+        -setMaxDepth 7 \
+        -ref $REF \
+        -anc $REF \
+        -GL 1 \
+        -out ${OUTPUT_DIR}/${base}_arr_het
+
+$REALSFS/realSFS ${base}_arr_het.saf.idx > ${base}_arr_est.ml
+
