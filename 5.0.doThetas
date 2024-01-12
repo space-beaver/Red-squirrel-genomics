@@ -1,0 +1,23 @@
+#Grid Engine options
+#$ -N dotheta
+#$ -cwd
+#$ -M mmarr3@ed.ac.uk
+#$ -l h_rt=48:00:00
+#$ -l h_vmem=64G
+#$ -pe sharedmem 8
+#$ -e e_dotheta
+#$ -o o_dotheta
+#$ -P roslin_faang
+
+angsd=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/misc
+
+#persite thetas 
+realSFS  saf2theta arr_merged.saf.idx -sfs arr_folded.sfs -outname arr -fold 1
+
+#logscale persite theta 
+$angsd/thetaStat print arr.thetas.idx 2>/dev/null |head
+
+#tajima's D 
+$angsd/thetaStat do_stat arr.thetas.idx -win 50000 -step 10000  -outnames arr.thetasWindow.gz
+
+#cat arr.thetas.idx.pestPG
