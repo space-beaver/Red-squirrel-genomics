@@ -7,7 +7,6 @@
 #$ -pe sharedmem 8
 #$ -e e_dotheta
 #$ -o o_dotheta
-#$ -P roslin_faang
 
 angsd=/exports/cmvm/eddie/eb/groups/clark_grp2/software/angsd/misc
 
