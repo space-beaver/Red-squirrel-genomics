@@ -8,6 +8,7 @@
 #$ -e e_win
 #$ -o o_win
 
+#folded site frequency calculation from safs. Example for population Arran
 
 #initialise mod env
 . /etc/profile.d/modules.sh
