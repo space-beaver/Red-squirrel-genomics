@@ -8,7 +8,6 @@
 #$ -o o_ngsld
 #$ -e e_ngsld
 #$ -t 1:19
-#$ -P roslin_faang
 
 #define dirs 
 ngsld=/exports/cmvm/eddie/eb/groups/ogden_grp/software/ngsTools/ngsLD
