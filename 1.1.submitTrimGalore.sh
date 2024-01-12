@@ -7,7 +7,6 @@
 #$ -l h_vmem=16G
 #$ -t 1-96
 #$ -pe sharedmem 4
-#$ -P roslin_prendergast_cores
 
 # Jobscript to run trim_galore
 
