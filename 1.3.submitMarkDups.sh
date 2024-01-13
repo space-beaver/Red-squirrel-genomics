@@ -26,7 +26,7 @@ base=`sed -n "$SGE_TASK_ID"p $sample_list | awk '{print $1}'`
 echo Processing sample: ${base} on $HOSTNAME
 
 #index
-#samtools index -@ 18 ${base}.map.sort.bam
+#samtools index -@ 4 ${base}.map.sort.bam
 
 #mark dups
 java -Xmx10g -jar $picard MarkDuplicates \
@@ -37,7 +37,7 @@ METRICS_FILE=${base}.metrics.txt \
 TMP_DIR=tmp
  
 #index 
-samtools index -@ 18 ${base}.map.sort.dedup.bam
+samtools index -@ 4 ${base}.map.sort.dedup.bam
 
 #remove files 
 #rm $base.map.sort.bam
