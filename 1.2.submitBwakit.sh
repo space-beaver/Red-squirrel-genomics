@@ -7,7 +7,7 @@
 #$ -l h_vmem=16G
 #$ -t 1:96
 #$ -pe sharedmem 4
-#  These options are:
+
 
 # Initialise the environment modules
 . /etc/profile.d/modules.sh
