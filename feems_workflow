@@ -9,16 +9,18 @@
 *******************************************************************************
 
 #modules req: 
-module load igmm/apps/bcftools/1.16 
-module load igmm/apps/tabix/0.2.6
-module load roslin/plink/1.90p
+module load igmm/apps/bcftools/1.20 
+module load roslin/plink/1.09
+module load roslin/python/3.8.10 
+#tabix req - load in conda env 
 
-<1. log into eddie
+
+<1. log into eddie rocky cores 
 ssh -XY mmarr3@eddie.ecdf.ed.ac.uk
-qlogin -N feems -l h_rt=10:00:00 -l h_vmem-16G
+qlogin -N feems -l h_rt=10:00:00 -l h_vmem-16G -l rl9=true
 
 <2. prepare snp data 
-  i. angsd run to call snps with no missing data and average min 4x coverage 
+i. angsd run to call snps with no missing data and average min 4x coverage 
 
 #!/bin/sh
 # Grid Engine options
@@ -30,6 +32,7 @@ qlogin -N feems -l h_rt=10:00:00 -l h_vmem-16G
 #$ -t 1:19
 #$ -e e_angsdUL
 #$ -o o_angsdUL
+#$ -l rl9=true
 
 #estimates genotype likelihoods with GATK
 #calulates allele frequencies 
@@ -77,25 +80,18 @@ module add java
 #  -setMaxDepth 750 \
 #  -dobcf 1
 
-	#ii. concat bcf files 
-bcftools concat chr1_pruned.bcf chr2_pruned.bcf chr3_pruned.bcf chr4_pruned.bcf chr5_pruned.bcf \
-chr6_pruned.bcf chr7_pruned.bcf chr8_pruned.bcf chr9_pruned.bcf chr10_pruned.bcf chr11_pruned.bcf \
-chr12_pruned.bcf chr13_pruned.bcf chr14_pruned.bcf chr15_pruned.bcf chr16_pruned.bcf chr17_pruned.bcf \
-chr18_pruned.bcf chr19_pruned.bcf -Oz -o svul_concat_pruned.vcf.gz
-
+#ii. concat bcf files 
+bcftools concat chr{1..19}_pruned.bcf -Ou | bgzip > svul_concat_pruned.vcf.gz
 bcftools view -H svul_concat_pruned.vcf.gz | wc -l
 
-
-	#iii. rename samples, extract scottish, sort, index
-	
+#iii. rename samples, extract scottish, sort, index
 bcftools reheader --samples sam_change.txt -o svul_concat_pruned_renamed.vcf.gz  svul_concat_pruned.vcf.gz
 bcftools view -S ^ex_sam.txt -Oz -o svul_concat_pruned_renamed_final_gone.vcf.gz svul_concat_pruned_renamed.vcf.gz
 
 bcftools sort -Oz -o svul_concat_pruned_renamed_final_sorted.vcf.gz svul_concat_pruned_renamed_final.vcf.gz
 tabix -p vcf svul_concat_pruned_renamed_final_sorted.vcf.gz
 
-	#v. prune for ld, convert to plink format
-	
+#v. prune for ld, convert to plink format
 plink --vcf svul_concat_pruned_renamed_final_sorted.vcf.gz --set-missing-var-ids @:#  --recode vcf --maf 0.05 --geno 0 --allow-extra-chr --out squirrel_feems_filt
 #51632 variants removed due to minor allele threshold(s)
 
@@ -105,7 +101,7 @@ plink --vcf squirrel_feems_filt.vcf --allow-extra-chr --indep-pairwise 50 10 0.1
 plink --vcf squirrel_feems_filt.vcf --extract squirrel_feems_filt.prune.in --recode vcf --allow-extra-chr --out squirrel_feems_filt_ld
 #10962 variants and 94 people pass filters and QC.
 
-	#iii. generate plink files 
+#iii. generate plink files 
 plink --vcf squirrel_feems_filt_ld.vcf --allow-extra-chr --recode --out squirrel_feems_filt_ld
 plink --file squirrel_feems_filt_ld --allow-extra-chr --make-bed --out squirrel_feems_filt_ld
 
@@ -151,7 +147,7 @@ p
 
 <4. Create env and instal feems 
 
-	i. create conda environment
+i. create conda environment
 	
 mamba create -n feems 
 mamba activate feems 
@@ -164,13 +160,13 @@ mamba install conda-forge::cffi
 	ii. enable multiple lines to be pasted into python
 echo "set enable-bracketed-paste off" >> ~/.inputrc 
             
-    iii. Run feems #this can all be done with an executable jupyter notebook 
+    iii. Run feems #this can all be done with an jupyter notebook 
     
-         #start
+#start
 python
          
-		#load packages 
-		# base
+#load packages 
+# base
 import numpy as np
 import pkg_resources
 from sklearn.impute import SimpleImputer
