@@ -1,4 +1,4 @@
-<><>feems-workflow<> <>MMarr<> <>12/01/2024<><>
+quit<><>feems-workflow<> <>MMarr<> <>12/01/2024<><>
 
 *******************************************************************************
 *#fast estimation of effective migration surface (feems)           
@@ -81,12 +81,12 @@ module add java
 #  -dobcf 1
 
 #ii. concat bcf files 
-bcftools concat chr{1..19}_pruned.bcf -Ou | bgzip > svul_concat_pruned.vcf.gz
+bcftools concat chr{1..19}_pruned.bcf -Oz -o svul_concat_pruned.vcf.gz
 bcftools view -H svul_concat_pruned.vcf.gz | wc -l
 
 #iii. rename samples, extract scottish, sort, index
 bcftools reheader --samples sam_change.txt -o svul_concat_pruned_renamed.vcf.gz  svul_concat_pruned.vcf.gz
-bcftools view -S ^ex_sam.txt -Oz -o svul_concat_pruned_renamed_final_gone.vcf.gz svul_concat_pruned_renamed.vcf.gz
+bcftools view -S ^ex_sam.txt -Oz -o svul_concat_pruned_renamed_final.vcf.gz svul_concat_pruned_renamed.vcf.gz
 
 bcftools sort -Oz -o svul_concat_pruned_renamed_final_sorted.vcf.gz svul_concat_pruned_renamed_final.vcf.gz
 tabix -p vcf svul_concat_pruned_renamed_final_sorted.vcf.gz
@@ -246,30 +246,44 @@ v.draw_obs_nodes(use_ids=False)
 fig.savefig('feems_noweights.png')
 
 #plot weighted
-sp_graph.fit(lamb = 20.0)
+sp_graph.fit(lamb = 10.0)
 
 fig = plt.figure(dpi=300)
 ax = fig.add_subplot(1, 1, 1, projection=projection)  
 v = Viz(ax, sp_graph, projection=projection, edge_width=.5, 
         edge_alpha=1, edge_zorder=100, sample_pt_size=20, 
         obs_node_size=7.5, sample_pt_color="black", 
-        cbar_font_size=10)
+        cbar_font_size=8)
 v.draw_map()
 v.draw_edges(use_weights=True)
 v.draw_obs_nodes(use_ids=False) 
 v.draw_edge_colorbar()
-fig.savefig('feems_1.png')
+fig.savefig('feems_10.png')
 
-sp_graph.fit(lamb = 2)
+sp_graph.fit(lamb = 5.0)
 
 fig = plt.figure(dpi=300)
 ax = fig.add_subplot(1, 1, 1, projection=projection)  
 v = Viz(ax, sp_graph, projection=projection, edge_width=.5, 
         edge_alpha=1, edge_zorder=100, sample_pt_size=20, 
         obs_node_size=7.5, sample_pt_color="black", 
-        cbar_font_size=10)
+        cbar_font_size=8)
 v.draw_map()
 v.draw_edges(use_weights=True)
 v.draw_obs_nodes(use_ids=False) 
 v.draw_edge_colorbar()
-fig.savefig('feems_lamda2.png')
+fig.savefig('feems_5.png')
+
+sp_graph.fit(lamb = 2.0)
+
+fig = plt.figure(dpi=300)
+ax = fig.add_subplot(1, 1, 1, projection=projection)  
+v = Viz(ax, sp_graph, projection=projection, edge_width=.5, 
+        edge_alpha=1, edge_zorder=100, sample_pt_size=20, 
+        obs_node_size=7.5, sample_pt_color="black", 
+        cbar_font_size=8)
+v.draw_map()
+v.draw_edges(use_weights=True)
+v.draw_obs_nodes(use_ids=False) 
+v.draw_edge_colorbar()
+fig.savefig('feems_2.png')
