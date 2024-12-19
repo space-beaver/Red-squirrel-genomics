@@ -145,7 +145,7 @@ p <- ggplot() +
 p
 
 
-<4. Create env and instal feems 
+<4. Create env and install feems 
 
 i. create conda environment
 	
@@ -288,7 +288,56 @@ v.draw_obs_nodes(use_ids=False)
 v.draw_edge_colorbar()
 fig.savefig('feems_2.png')
 
-#run cross validation 
+################################################################################run cross validation############################################################################################# 
+#assumes starting from scratch 
+#activate feesms conda environmenyt 
+conda activate feems2
+
+#load pythin packages 
+# base
+import numpy as np
+import pkg_resources
+from sklearn.impute import SimpleImputer
+from pandas_plink import read_plink
+import statsmodels.api as sm
+
+# viz
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
+import cartopy.crs as ccrs
+
+# feems
+from feems.utils import prepare_graph_inputs
+from feems import SpatialGraph, Viz
+from feems.cross_validation import run_cv
+
+# change matplotlib fonts
+plt.rcParams["font.family"] = "Arial"
+plt.rcParams["font.sans-serif"] = "Arial"
+
+#set data path
+data_path = data_path = (".", ".") 
+
+# read the genotype data and mean impute missing data
+(bim, fam, G) = read_plink("squirrel_feems_filt_ld".format(data_path))
+imp = SimpleImputer(missing_values=np.nan, strategy="mean")
+genotypes = imp.fit_transform((np.array(G)).T)
+
+# setup graph
+coord = np.loadtxt("squirrel.coord".format(data_path))  # sample coordinates
+outer = np.loadtxt("squirrel.outer".format(data_path))  # outer coordinates
+grid_path = "/exports/cmvm/eddie/eb/groups/ogden_grp/melissa_ogden/svul_rev/mapped/dggrid.shp".format(data_path)  # path to discrete global grid
+
+# graph input files
+outer, edges, grid, _ = prepare_graph_inputs(coord=coord, 
+                                             ggrid=grid_path,
+                                             translated=False, 
+                                             buffer=0,
+                                             outer=outer)
+
+# construct spatial graph object
+sp_graph = SpatialGraph(genotypes, coord, grid, edges, scale_snps=True)
+
 # define grids
 # reverse the order of lambdas and alphas for warmstart
 lamb_grid = np.geomspace(1e-6, 1e2, 20)[::-1]
@@ -307,12 +356,13 @@ ax.plot(np.log10(lamb_grid), mean_cv_err, ".");
 ax.set_xlabel("log10(lambda)");
 ax.set_ylabel("L2 CV Error");
 ax.axvline(np.log10(lamb_cv), color = "orange")
+fig.savefig('cv.png')
 
 # figure params
-projection = ccrs.EquidistantConic(central_longitude=-108.842926, central_latitude=66.037547)
+projection = ccrs.EquidistantConic(central_longitude=-4.203532, central_latitude=56.587083)
 title_loc = "left"
 title_pad = "-10"
-title_fontsize = 12
+title_fontsize = 18
 edge_width = .2
 edge_alpha = 1
 edge_zorder = 3
@@ -322,8 +372,9 @@ cbar_font_size = 8
 cbar_ticklabelsize = 8
 cbar_orientation = "horizontal"
 
+
 # figure setup
-fig = plt.figure(dpi=300)
+fig = plt.figure(figsize=(12, 8), dpi=600)
 spec = gridspec.GridSpec(ncols=2, nrows=2, figure=fig, wspace=0.0, hspace=0.0)
 
 # axis 00 
@@ -339,6 +390,7 @@ v.draw_edges(use_weights=True)
 v.draw_obs_nodes(use_ids=False) 
 ax_00.text(.2, .85, "lambda={:.5f}\ncv l2 error={:.5f}".format(lamb_grid[0], mean_cv_err[0, 0]), 
            fontdict={"fontsize": 4}, transform = ax_00.transAxes)
+
 
 # axis 10
 ax_10 = fig.add_subplot(spec[1, 0], projection=projection)
@@ -385,3 +437,19 @@ v.cbar_ticklabelsize = cbar_ticklabelsize
 v.draw_edge_colorbar()
 ax_11.text(.2, .85, "lambda={:.5f}\ncv l2 error={:.5f}".format(lamb_grid[10], mean_cv_err[10, 0]), 
            fontdict={"fontsize": 4}, transform = ax_11.transAxes)
+
+# re-fit
+sp_graph.fit(lamb_cv)
+
+# plot
+fig = plt.figure(dpi=600)
+ax = fig.add_subplot(1, 1, 1, projection=projection)  
+v = Viz(ax, sp_graph, projection=projection, edge_width=.5, 
+        edge_alpha=1, edge_zorder=100, sample_pt_size=20, 
+        obs_node_size=7.5, sample_pt_color="black", 
+        cbar_font_size=8)
+v.draw_map()
+v.draw_edges(use_weights=True)
+v.draw_obs_nodes(use_ids=False) 
+v.draw_edge_colorbar()
+fig.savefig('feems_final.png')
